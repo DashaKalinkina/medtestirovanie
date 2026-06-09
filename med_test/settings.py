@@ -138,14 +138,4 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
 ]
 
-# ВРЕМЕННО - автоматические миграции (удалить после первого успешного деплоя)
-from django.core.management import call_command
-import sys
-
-if 'migrate' not in sys.argv and 'makemigrations' not in sys.argv:
-    try:
-        call_command('migrate', '--noinput')
-        print("✅ Migrations applied successfully!")
-    except Exception as e:
-        print(f"⚠️ Migration error: {e}")
 
