@@ -1,0 +1,4 @@
+{
+  "buildCommand": "python manage.py migrate --noinput && python manage.py collectstatic --noinput",
+  "installCommand": "pip install -r requirements.txt"
+}
