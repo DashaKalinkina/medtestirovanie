@@ -18,8 +18,12 @@ SECRET_KEY = 'django-insecure-m4k#cbncho8bjdrp*)n^mli2atsizx2ee#291+9!c9dbi(n3+9
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']  # ТОЛЬКО ДЛЯ ТЕСТА! Не используйте в production
-# Application definition
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.vercel.app',  # С точкой в начале для всех поддоменов
+    'medtestirovanie-13hkngsf4-dashakalinkinas-projects.vercel.app',
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -134,5 +138,4 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
 ]
 
-# Разрешенные хосты
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '0.0.0.0']
+
