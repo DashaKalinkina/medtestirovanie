@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.python-version
+env/
+venv/
+.env
+*.log
+
+# Django
+staticfiles/
+media/
+db.sqlite3
+
+# Git
+.git
+.gitignore
+.github/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Прочее
+README.md
+*.sql
+*.bak

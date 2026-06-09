@@ -1,0 +1,45 @@
+/* Дополнительные стили для админ-панели поверх Bootstrap */
+:root {
+    --admin-primary: #0d6efd;
+    --admin-secondary: #6c757d;
+    --admin-success: #198754;
+    --admin-danger: #dc3545;
+    --admin-warning: #ffc107;
+    --admin-info: #0dcaf0;
+}
+
+/* Кастомные стили для админки */
+.admin-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+}
+
+.admin-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 25px rgba(13, 110, 253, 0.2);
+}
+
+.admin-stats {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--admin-primary);
+}
+
+.admin-table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.admin-table thead {
+    background: var(--admin-primary);
+    color: white;
+}
+
+/* Сохраняем стили для инициалов в админке */
+.initials-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}

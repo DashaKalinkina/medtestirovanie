@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Результат теста — {{ result.test.title|default:'Тест' }}{% endblock %}
+
+{% block content %}
+
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Результат теста</h2>
+        <a href="{% url 'administration:moderator_results' %}" class="btn btn-outline-secondary">← К списку результатов</a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h3>{{ result.test.title|default:'Тест удалён' }}</h3>
+            <p class="text-muted">
+                Пользователь: {% if result.worker %}{{ result.worker.get_full_name }} ({{ result.worker.email }}){% else %}—{% endif %}
+            </p>
+
+            <div class="alert alert-{% if result.passed %}success{% elif result.passed == False %}danger{% else %}warning{% endif %}">
+                <h4 class="alert-heading">
+                    {% if result.passed %}
+                    Тест пройден
+                    {% elif result.passed == False %}
+                    Тест не пройден
+                    {% else %}
+                    В процессе
+                    {% endif %}
+                </h4>
+                <p class="mb-0">
+                    Результат: {% if result.percentage is not None %}{{ result.percentage|floatformat:1 }}%{% else %}—{% endif %}
+                    | Проходной балл: {{ result.test.passing_score|default:'?' }}%
+                    | Баллов: {{ result.score|default:'?' }}
+                    {% if result.time_taken %}
+                    | Время: {{ result.time_taken|add:"-60" }} мин {{ result.time_taken|add:"-60"|add:"-60" }} сек
+                    {% endif %}
+                </p>
+                <p class="mb-0 small">
+                    Начат: {{ result.started_at|date:'d.m.Y H:i'|default:'—' }}
+                    | Завершён: {{ result.completed_at|date:'d.m.Y H:i'|default:'—' }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {% if detailed_answers %}
+    <h4>Детализация ответов</h4>
+    {% for detail in detailed_answers %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5>Вопрос: {{ detail.question.text|default:'Вопрос удалён' }}</h5>
+            {% if detail.question and detail.question.image %}
+            <div class="mb-3">
+                <img src="{{ detail.question.image.url }}"
+                     class="img-fluid rounded" alt="К вопросу" style="max-height: 200px;">
+            </div>
+            {% endif %}
+            <p class="text-{% if detail.is_correct %}success{% else %}danger{% endif %}">
+                {% if detail.is_correct %}Правильно{% else %}Неправильно{% endif %}
+            </p>
+            {% if detail.question and detail.question.question_type == 'text' %}
+            <p><strong>Ответ пользователя:</strong> {{ detail.ua.text_answer|default:'Нет ответа' }}</p>
+            <p><strong>Правильный ответ:</strong> {{ detail.correct_answers.0.text|default:'—' }}</p>
+            {% else %}
+            <p><strong>Ответы пользователя:</strong></p>
+            <ul>
+                {% for answer in detail.user_answers %}
+                <li>{{ answer.text }}</li>
+                {% empty %}
+                <li>Нет ответа</li>
+                {% endfor %}
+            </ul>
+            <p><strong>Правильные ответы:</strong></p>
+            <ul>
+                {% for answer in detail.correct_answers %}
+                <li>{{ answer.text }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <a href="{% url 'administration:moderator_results' %}" class="btn btn-primary">К списку результатов</a>
+
+{% endblock %}

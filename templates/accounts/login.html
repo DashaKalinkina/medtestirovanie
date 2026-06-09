@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="form-section">
+    <div class="card">
+        <div class="card-header">
+            <h4>Вход в систему</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" novalidate>
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                        {{ form.email.label }}
+                    </label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <div class="error-message">
+                            {% for error in form.email.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.password.id_for_label }}" class="form-label">
+                        {{ form.password.label }}
+                    </label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        <div class="error-message">
+                            {% for error in form.password.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="checkbox-wrapper">
+                    {{ form.remember }}
+                    <label class="checkbox-label" for="{{ form.remember.id_for_label }}">
+                        {{ form.remember.label }}
+                    </label>
+                </div>
+
+                <button type="submit" class="button button-primary button-block">
+                    Войти
+                </button>
+
+                <hr class="divider">
+
+                <p class="text-center">
+                    Нет аккаунта? 
+                    <a href="{% url 'accounts:register' %}" class="text-link">
+                        Зарегистрироваться
+                    </a>
+                </p>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

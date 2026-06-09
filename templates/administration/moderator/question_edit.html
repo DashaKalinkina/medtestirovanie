@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование вопроса{% endblock %}
+
+{% block content %}
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Редактирование вопроса</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Текст вопроса</label>
+                            <textarea name="question_text" class="form-control" rows="3" required>{{ question.text }}</textarea>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Тип вопроса</label>
+                                <select name="question_type" class="form-select" id="questionType">
+                                    <option value="single" {% if question.question_type == 'single' %}selected{% endif %}>Один вариант</option>
+                                    <option value="multiple" {% if question.question_type == 'multiple' %}selected{% endif %}>Несколько вариантов</option>
+                                    <option value="text" {% if question.question_type == 'text' %}selected{% endif %}>Текстовый ответ</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Баллы</label>
+                                <input type="number" name="points" class="form-control" value="{{ question.points }}" min="1">
+                            </div>
+                        </div>
+
+                        <div id="answersSection">
+                            {% if question.question_type == 'text' %}
+                            <label class="form-label fw-bold">Варианты ответов</label>
+                            <div class="alert alert-info">
+                                Для текстового вопроса варианты ответов не нужны.
+                            </div>
+                            {% else %}
+                            <label class="form-label fw-bold">Варианты ответов</label>
+                            <div class="mb-2">
+                                {% for answer in question.answers.all %}
+                                <div class="input-group mb-2">
+                                    <input type="text" name="answers_{{ forloop.counter0 }}_text" class="form-control" 
+                                           value="{{ answer.text }}" placeholder="Вариант ответа {{ forloop.counter }}">
+                                    <div class="input-group-text">
+                                        <input type="checkbox" name="answers_{{ forloop.counter0 }}_correct" value="1" 
+                                               {% if answer.is_correct %}checked{% endif %}> Правильный
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="input-group mb-2">
+                                    <input type="text" name="answers_0_text" class="form-control" placeholder="Вариант ответа 1">
+                                    <div class="input-group-text">
+                                        <input type="checkbox" name="answers_0_correct" value="1"> Правильный
+                                    </div>
+                                </div>
+                                <div class="input-group mb-2">
+                                    <input type="text" name="answers_1_text" class="form-control" placeholder="Вариант ответа 2">
+                                    <div class="input-group-text">
+                                        <input type="checkbox" name="answers_1_correct" value="1"> Правильный
+                                    </div>
+                                </div>
+                                <div class="input-group mb-2">
+                                    <input type="text" name="answers_2_text" class="form-control" placeholder="Вариант ответа 3">
+                                    <div class="input-group-text">
+                                        <input type="checkbox" name="answers_2_correct" value="1"> Правильный
+                                    </div>
+                                </div>
+                                <div class="input-group mb-2">
+                                    <input type="text" name="answers_3_text" class="form-control" placeholder="Вариант ответа 4">
+                                    <div class="input-group-text">
+                                        <input type="checkbox" name="answers_3_correct" value="1"> Правильный
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">Для типа "Один вариант" можно выбрать только один правильный ответ. Для "Несколько вариантов" - несколько.</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'administration:moderator_questions' question.test.id %}" class="btn btn-secondary">
+                                Отмена
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                Сохранить изменения
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+<script>
+document.getElementById('questionType')?.addEventListener('change', function() {
+    const answersSection = document.getElementById('answersSection');
+    if (this.value === 'text') {
+        answersSection.innerHTML = `
+            <label class="form-label fw-bold">Варианты ответов</label>
+            <div class="alert alert-info">
+                Для текстового вопроса варианты ответов не нужны.
+            </div>
+        `;
+    } else {
+        answersSection.innerHTML = `
+            <label class="form-label fw-bold">Варианты ответов</label>
+            <div class="mb-2">
+                <div class="input-group mb-2">
+                    <input type="text" name="answers_0_text" class="form-control" placeholder="Вариант ответа 1">
+                    <div class="input-group-text">
+                        <input type="checkbox" name="answers_0_correct" value="1"> Правильный
+                    </div>
+                </div>
+                <div class="input-group mb-2">
+                    <input type="text" name="answers_1_text" class="form-control" placeholder="Вариант ответа 2">
+                    <div class="input-group-text">
+                        <input type="checkbox" name="answers_1_correct" value="1"> Правильный
+                    </div>
+                </div>
+                <div class="input-group mb-2">
+                    <input type="text" name="answers_2_text" class="form-control" placeholder="Вариант ответа 3">
+                    <div class="input-group-text">
+                        <input type="checkbox" name="answers_2_correct" value="1"> Правильный
+                    </div>
+                </div>
+                <div class="input-group mb-2">
+                    <input type="text" name="answers_3_text" class="form-control" placeholder="Вариант ответа 4">
+                    <div class="input-group-text">
+                        <input type="checkbox" name="answers_3_correct" value="1"> Правильный
+                    </div>
+                </div>
+            </div>
+            <small class="text-muted">Для типа "Один вариант" можно выбрать только один правильный ответ. Для "Несколько вариантов" - несколько.</small>
+        `;
+    }
+});
+</script>
+{% endblock %}

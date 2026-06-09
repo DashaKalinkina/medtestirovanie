@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Результат пробного теста — {{ test.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h2 class="card-title">Результат пробного теста</h2>
+            <p class="text-muted">Результат не сохранён в базу данных.</p>
+            <h3>{{ test.title }}</h3>
+
+            <div class="alert alert-{% if passed %}success{% else %}danger{% endif %}">
+                <h4 class="alert-heading">
+                    {% if passed %}Тест пройден!{% else %}Тест не пройден{% endif %}
+                </h4>
+                <p class="mb-0">
+                    Ваш результат: {{ percentage|floatformat:1 }}% ({{ score }} из {{ total_points }} баллов)
+                    <br>Проходной балл: {{ test.passing_score }}%
+                </p>
+            </div>
+
+            {% if detailed_answers %}
+            <h4>Детализация ответов</h4>
+            {% for detail in detailed_answers %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5>Вопрос: {{ detail.question.text|default:'—' }}</h5>
+                    {% if detail.question and detail.question.image %}
+                    <div class="mb-3">
+                        <img src="{{ detail.question.image.url }}"
+                             class="img-fluid rounded" alt="К вопросу" style="max-height: 200px;">
+                    </div>
+                    {% endif %}
+                    <p class="text-{% if detail.is_correct %}success{% else %}danger{% endif %}">
+                        {% if detail.is_correct %}Правильно{% else %}Неправильно{% endif %}
+                    </p>
+                    {% if detail.text_answer %}
+                    <p><strong>Ваш ответ:</strong> {{ detail.text_answer }}</p>
+                    <p><strong>Правильный ответ:</strong> {{ detail.correct_answers.0.text|default:'—' }}</p>
+                    {% else %}
+                    <p><strong>Ваши ответы:</strong></p>
+                    <ul>
+                        {% for answer in detail.user_answers %}<li>{{ answer.text }}</li>{% empty %}<li>Нет ответа</li>{% endfor %}
+                    </ul>
+                    <p><strong>Правильные ответы:</strong></p>
+                    <ul>
+                        {% for answer in detail.correct_answers %}<li>{{ answer.text }}</li>{% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <a href="{% url 'tests:trial_page' test.id %}" class="btn btn-info">Ещё попытку</a>
+            <a href="{% url 'tests:tests' %}" class="btn btn-primary">К списку тестов</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,164 @@
+{% extends "administration/admin_base.html" %}
+
+{% block title %}Панель администратора{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>Панель администратора</h2>
+        </div>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Быстрые действия</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'administration:admin_users' %}" class="btn btn-outline-primary w-100 py-3">
+                                <i class="bi bi-people d-block mb-2" style="font-size: 2rem;"></i>
+                                Пользователи
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'administration:admin_subscriptions' %}" class="btn btn-outline-primary w-100 py-3">
+                                <i class="bi bi-key d-block mb-2" style="font-size: 2rem;"></i>
+                                Подписки
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'administration:moderator_tests' %}" class="btn btn-outline-primary w-100 py-3">
+                                <i class="bi bi-list d-block mb-2" style="font-size: 2rem;"></i>
+                                Все тесты
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'administration:moderator_create_test' %}" class="btn btn-success w-100 py-3">
+                                <i class="bi bi-plus-circle d-block mb-2" style="font-size: 2rem;"></i>
+                                Создать тест
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Последние пользователи -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Последние пользователи</h5>
+                    <a href="{% url 'administration:admin_users' %}" class="btn btn-sm btn-light">
+                        Все пользователи
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for user in recent_users %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ user.get_full_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ user.email }}</small>
+                            </div>
+                            <span class="badge 
+                                {% if user.role == 'admin' %}bg-danger
+                                {% elif user.role == 'moderator' %}bg-warning text-dark
+                                {% else %}bg-info{% endif %}">
+                                {{ user.get_role_display }}
+                            </span>
+                        </div>
+                        {% empty %}
+                        <div class="text-muted">Нет пользователей</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Последние тесты -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Последние тесты</h5>
+                    <a href="{% url 'administration:moderator_tests' %}" class="btn btn-sm btn-light">
+                        Все тесты
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for test in recent_tests %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ test.title }}</strong>
+                                <small class="text-muted">{{ test.created_at|date:'d.m.Y' }}</small>
+                            </div>
+                            <small class="text-muted">
+                                Вопросов: {{ test.questions.count }} | 
+                                Сложность: 
+                                <span class="badge 
+                                    {% if test.difficulty == 'easy' %}bg-success
+                                    {% elif test.difficulty == 'medium' %}bg-warning text-dark
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ test.get_difficulty_display }}
+                                </span>
+                            </small>
+                        </div>
+                        {% empty %}
+                        <div class="text-muted">Нет тестов</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Последние результаты -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Последние результаты</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Пользователь</th>
+                                <th>Тест</th>
+                                <th>Результат</th>
+                                <th>Дата</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in recent_results %}
+                            <tr>
+                                <td>{{ result.worker.get_full_name }}</td>
+                                <td>{{ result.test.title }}</td>
+                                <td>
+                                    <span class="badge {% if result.passed %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ result.percentage|floatformat:1 }}%
+                                    </span>
+                                </td>
+                                <td>{{ result.completed_at|date:'d.m.Y H:i' }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">Нет результатов</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

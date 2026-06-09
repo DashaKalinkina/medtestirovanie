@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:15
+    container_name: medical_test_db
+    restart: always
+    environment:
+      POSTGRES_DB: med_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 714825936
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: medical_test_web
+    restart: always
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=1
+      - DB_HOST=db
+      - DB_NAME=med_test
+      - DB_USER=postgres
+      - DB_PASSWORD=714825936
+      - DB_PORT=5432
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:

@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}{{ test.title }}{% endblock %}
+
+{% block content %}
+{% if is_taking %}
+    <!-- ========== РЕЖИМ ПРОХОЖДЕНИЯ ТЕСТА (с вопросами) ========== -->
+    <div class="test-taking-container">
+        <div class="test-header">
+            <h2>{{ test.title }}</h2>
+            <div class="test-info">
+                <div class="timer" id="timer" data-time-limit="{{ test.time_limit }}">
+                    Осталось времени: <span id="time">{% widthratio test.time_limit 60 1 %}:00</span>
+                </div>
+                <div class="question-counter">
+                    Вопрос <span id="current-question">1</span> из {{ questions|length }}
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" id="test-form" class="test-form">
+            {% csrf_token %}
+            
+            {% for question in questions %}
+            <div class="question-card" id="question-{{ forloop.counter }}" 
+                 {% if forloop.counter > 1 %}style="display: none;"{% endif %}>
+                <div class="question-header">
+                    <h3>Вопрос {{ forloop.counter }}</h3>
+                    <span class="question-points">Баллов: {{ question.points }}</span>
+                </div>
+                
+                <div class="question-text">
+                    {{ question.text }}
+                </div>
+
+                <div class="answers">
+                    {% if question.question_type == 'single' %}
+                        <!-- Одиночный выбор -->
+                        {% for answer in question.answers.all %}
+                        <div class="answer-option">
+                            <label>
+                                <input type="radio" name="question_{{ question.id }}" 
+                                       value="{{ answer.id }}" required>
+                                {{ answer.text }}
+                            </label>
+                        </div>
+                        {% endfor %}
+
+                    {% elif question.question_type == 'multiple' %}
+                        <!-- Множественный выбор -->
+                        {% for answer in question.answers.all %}
+                        <div class="answer-option">
+                            <label>
+                                <input type="checkbox" name="question_{{ question.id }}" 
+                                       value="{{ answer.id }}">
+                                {{ answer.text }}
+                            </label>
+                        </div>
+                        {% endfor %}
+
+                    {% elif question.question_type == 'text' %}
+                        <!-- Текстовый ответ -->
+                        <div class="answer-text">
+                            <textarea name="question_text_{{ question.id }}" 
+                                      rows="4" 
+                                      placeholder="Введите ваш ответ..."></textarea>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="test-navigation">
+                <div class="progress-indicator">
+    {% for question in questions %}
+    <span class="progress-dot {% if forloop.first %}active{% endif %}" 
+          data-question="{{ forloop.counter }}"></span>
+    {% endfor %}
+</div>
+                <button type="button" id="prev-btn" class="button button-secondary" disabled>
+                    Предыдущий
+                </button>
+                <button type="button" id="next-btn" class="button button-primary">
+                    Следующий
+                </button>
+                <button type="submit" id="submit-btn" class="button button-success" style="display: none;">
+                    Завершить тест
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const questions = document.querySelectorAll('.question-card');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const currentSpan = document.getElementById('current-question');
+        
+        let currentIndex = 0;
+
+        function showQuestion(index) {
+            questions.forEach((q, i) => {
+                q.style.display = i === index ? 'block' : 'none';
+            });
+            
+            currentSpan.textContent = index + 1;
+            
+            prevBtn.disabled = index === 0;
+            
+            if (index === questions.length - 1) {
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'inline-block';
+            } else {
+                nextBtn.style.display = 'inline-block';
+                submitBtn.style.display = 'none';
+            }
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                showQuestion(currentIndex);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < questions.length - 1) {
+                // Проверяем, выбран ли ответ на текущем вопросе
+                const currentQuestion = questions[currentIndex];
+                const inputs = currentQuestion.querySelectorAll('input[type="radio"], input[type="checkbox"], textarea');
+                let hasAnswer = false;
+                
+                inputs.forEach(input => {
+                    if (input.type === 'radio' || input.type === 'checkbox') {
+                        if (input.checked) hasAnswer = true;
+                    } else if (input.tagName === 'TEXTAREA') {
+                        if (input.value.trim() !== '') hasAnswer = true;
+                    }
+                });
+                
+                if (!hasAnswer && inputs.length > 0) {
+                    alert('Пожалуйста, ответьте на вопрос перед переходом к следующему');
+                    return;
+                }
+                
+                currentIndex++;
+                showQuestion(currentIndex);
+            }
+        });
+
+        // Таймер
+        const timeLimit = parseInt(document.getElementById('timer').dataset.timeLimit);
+        let timeLeft = timeLimit;
+        const timerElement = document.getElementById('time');
+
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 0) {
+                alert('Время вышло! Тест будет автоматически завершен.');
+                document.getElementById('test-form').submit();
+            }
+            
+            timeLeft--;
+        }
+
+        setInterval(updateTimer, 1000);
+        
+        // Подтверждение перед отправкой
+        document.getElementById('test-form').addEventListener('submit', function(e) {
+            if (!confirm('Вы уверены, что хотите завершить тест?')) {
+                e.preventDefault();
+            }
+        });
+    });
+    </script>
+
+{% else %}
+    <!-- ========== РЕЖИМ ПРОСМОТРА ИНФОРМАЦИИ О ТЕСТЕ ========== -->
+    <div class="test-detail-container">
+        <div class="test-detail-card">
+            <div class="test-detail-header">
+                <h2 class="test-detail-title">{{ test.title }}</h2>
+            </div>
+            <div class="test-detail-body">
+                <p class="test-detail-description">{{ test.description }}</p>
+                
+                <div class="test-stats-grid">
+                    <div class="test-stat-item">
+                        <div class="test-stat-card">
+                            <h5 class="test-stat-label">Сложность</h5>
+                            <span class="difficulty-badge 
+                                {% if test.difficulty == 'easy' %}difficulty-easy
+                                {% elif test.difficulty == 'medium' %}difficulty-medium
+                                {% else %}difficulty-hard{% endif %}">
+                                {{ test.get_difficulty_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="test-stat-item">
+                        <div class="test-stat-card">
+                            <h5 class="test-stat-label">Время</h5>
+                            <span class="test-stat-value">{% widthratio test.time_limit 60 1 %} мин</span>
+                        </div>
+                    </div>
+                    <div class="test-stat-item">
+                        <div class="test-stat-card">
+                            <h5 class="test-stat-label">Вопросы</h5>
+                            <span class="test-stat-value">{{ test.question_count }}</span>
+                        </div>
+                    </div>
+                    <div class="test-stat-item">
+                        <div class="test-stat-card">
+                            <h5 class="test-stat-label">Проходной балл</h5>
+                            <span class="test-stat-value">{{ test.passing_score }}%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="test-instructions">
+                    <h5 class="instructions-title">Инструкция:</h5>
+                    <ul class="instructions-list">
+                        <li>На прохождение теста дается {% widthratio test.time_limit 60 1 %} минут</li>
+                        <li>Тест состоит из {{ test.question_count }} вопросов</li>
+                        <li>Для успешной сдачи необходимо набрать {{ test.passing_score }}% правильных ответов</li>
+                        <li>После начала теста таймер нельзя остановить</li>
+                        <li>Если вы начнете тест и не завершите его, прогресс не сохранится</li>
+                    </ul>
+                </div>
+                
+                <div class="test-actions">
+                    {% if test.is_trial %}
+                    <div class="button-group">
+                        <a href="{% url 'tests:start' test.id %}" class="button button-primary button-large">Начать тест</a>
+                        <a href="{% url 'tests:trial_page' test.id %}" class="button button-large">
+                            Начать пробный тест
+                        </a>
+                        <a href="{% url 'tests:tests' %}" class="button button-outline-secondary button-large">К списку тестов</a>
+                    </div>
+                    <p class="trial-note">«Начать тест» — результат сохраняется. «Пробный тест» — не сохраняется.</p>
+                    {% else %}
+                    <div class="button-group">
+                        <a href="{% url 'tests:start' test.id %}" class="button button-primary button-large">Начать тест</a>
+                        <a href="{% url 'tests:tests' %}" class="button button-outline-secondary button-large">К списку тестов</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Создание теста{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4>Создание нового теста</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{% url 'administration:moderator_create_test' %}">
+                    {% csrf_token %}
+                    
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Исправьте следующие ошибки:</strong>
+                        <ul class="mb-0 mt-2">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <li>{{ field }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">Название теста</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="text-danger">
+                                {% for error in form.title.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">Описание теста</label>
+                        {{ form.description }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Категория</label>
+                        <div class="input-group">
+                            {{ form.category }}
+                            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                                + Добавить
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCategoryModal">
+                                - Удалить
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.difficulty.id_for_label }}" class="form-label">Сложность</label>
+                                {{ form.difficulty }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.time_limit.id_for_label }}" class="form-label">Лимит времени (минут)</label>
+                                {{ form.time_limit }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.passing_score.id_for_label }}" class="form-label">Проходной балл (%)</label>
+                                {{ form.passing_score }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="{{ form.access_type.id_for_label }}" class="form-label">Тип доступа</label>
+                                {{ form.access_type }}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.max_attempts.id_for_label }}" class="form-label">Максимум попыток</label>
+                                {{ form.max_attempts }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        {{ form.is_trial }}
+                        <label class="form-check-label" for="{{ form.is_trial.id_for_label }}">
+                            Пробный тест (максимум 2 попытки)
+                        </label>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'administration:moderator_panel' %}" class="btn btn-secondary">
+                            Отмена
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            Создать тест
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Модальное окно для добавления категории -->
+        <div class="modal fade" id="addCategoryModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="POST" action="{% url 'administration:add_category' %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title">➕ Добавить новую категорию</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Название категории</label>
+                                <input type="text" name="category_name" class="form-control" required placeholder="Например: Терапия">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Описание (необязательно)</label>
+                                <textarea name="category_description" class="form-control" rows="2" placeholder="Краткое описание"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-primary">Создать категорию</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно для удаления категории -->
+        <div class="modal fade" id="deleteCategoryModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">🗑️ Удаление категории</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Выберите категорию для удаления:</p>
+                        
+                        {% if categories %}
+                            <div class="list-group">
+                                {% for category in categories %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{{ category.name }}</strong>
+                                                {% if category.description %}
+                                                    <br>
+                                                    <small class="text-muted">{{ category.description }}</small>
+                                                {% endif %}
+                                            </div>
+                                            <form method="POST" 
+                                                  action="{% url 'administration:delete_category' category.id %}"
+                                                  onsubmit="return confirm('Удалить категорию &quot;{{ category.name }}&quot;? Все тесты в этой категории будут переведены в &quot;Без категории&quot;.');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    Удалить
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info mb-0">
+                                Нет доступных категорий для удаления.
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

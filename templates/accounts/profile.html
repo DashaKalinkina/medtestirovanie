@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль - {{ user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-grid">
+        <!-- Боковая панель с информацией о пользователе -->
+        <div class="profile-sidebar">
+            <div class="profile-card">
+                <div class="profile-card-header text-center">
+                    <h4>Профиль</h4>
+                </div>
+                <div class="profile-card-body text-center">
+                    <div class="avatar-wrapper">
+                        <div class="avatar-circle">
+                            {{ user.first_name|first|default:'' }}{{ user.last_name|first|default:'' }}
+                        </div>
+                    </div>
+
+                    <h5 class="profile-name">{{ user.get_full_name }}</h5>
+                    <p class="profile-position">{{ user.position|default:'' }}</p>
+
+                    <!-- Кнопка редактирования профиля -->
+                    <div class="profile-actions">
+                        <a href="{% url 'accounts:profile_edit' %}" class="button button-primary button-block">
+                            Редактировать профиль
+                        </a>
+                    </div>
+
+                    <div class="profile-info-list">
+                        <div class="profile-info-item">
+                            <span class="info-label">Email:</span>
+                            <span class="info-value">{{ user.email }}</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">Специализация:</span>
+                            <span class="info-value">{{ user.specialization }}</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">Лицензия:</span>
+                            <span class="info-value">{{ user.license_number }}</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">Учреждение:</span>
+                            <span class="info-value">{{ user.institution|default:'Не указано' }}</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">Должность:</span>
+                            <span class="info-value">{{ user.position|default:'Не указано' }}</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">Стаж:</span>
+                            <span class="info-value">{{ user.years_experience }} лет</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="info-label">Регистрация:</span>
+                            <span class="info-value">{{ user.created_at|date:'d.m.Y'|default:'Неизвестно' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-main">
+            <div class="stats-card">
+                <div class="stats-card-header">
+                    <h5>Статистика тестирования</h5>
+                </div>
+                <div class="stats-card-body">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-box">
+                                <div class="stat-number">{{ total_tests }}</div>
+                                <div class="stat-label">Всего тестов</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-box">
+                                <div class="stat-number text-success">{{ passed_tests }}</div>
+                                <div class="stat-label">Пройдено</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-box">
+                                <div class="stat-number text-danger">{{ failed_tests }}</div>
+                                <div class="stat-label">Не пройдено</div>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-box">
+                                <div class="stat-number">{{ avg_score }}%</div>
+                                <div class="stat-label">Средний балл</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-card">
+                <div class="results-card-header">
+                    <h5>Последние результаты тестов</h5>
+                    <a href="{% url 'tests:tests' %}" class="button button-small button-primary">
+                        Все тесты
+                    </a>
+                </div>
+                <div class="results-card-body">
+                    {% if recent_results %}
+                    <div class="table-wrapper">
+                        <table class="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Тест</th>
+                                    <th>Дата</th>
+                                    <th>Результат</th>
+                                    <th>Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for result in recent_results %}
+                                <tr>
+                                    <td class="test-title" style="color: black;">{{ result.test.title|default:'Тест удален' }}</td>
+                                    <td class="test-date">
+                                        {% if result.completed_at %}
+                                        {{ result.completed_at|date:'d.m.Y H:i' }}
+                                        {% elif result.started_at %}
+                                        {{ result.started_at|date:'d.m.Y H:i' }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td class="test-score">
+                                        {% if result.percentage is not None %}
+                                        {{ result.percentage|floatformat:1 }}%
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td class="test-status">
+                                        {% if result.passed %}
+                                        <span class="status-badge status-success">Пройден</span>
+                                        {% elif result.passed == False %}
+                                        <span class="status-badge status-danger">Не пройден</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="test-actions">
+                                        <a href="{% url 'tests:result' result.id %}"
+                                           class="button">
+                                            Подробнее
+                                        </a>
+                                    
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        Вы еще не проходили тесты. <a href="{% url 'tests:tests' %}" class="text-link">Начните сейчас!</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

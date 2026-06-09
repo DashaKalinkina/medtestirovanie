@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - Медицинское тестирование{% endblock %}
+
+{% block content %}
+<!-- Герой-секция -->
+<div class="hero-section">
+    <h1 class="hero-title">Добро пожаловать в систему тестирования медицинских работников</h1>
+    <p class="hero-subtitle">Проверьте свои знания, пройдите профессиональные тесты.</p>
+
+    {% if not user.is_authenticated %}
+    <div class="hero-divider"></div>
+    <p class="hero-text">Для доступа к тестам необходимо войти в систему.</p>
+    <div class="hero-buttons">
+        <a class="button button-primary button-large" href="{% url 'accounts:login' %}">Войти</a>
+        <a class="button button-success button-large" href="{% url 'accounts:register' %}">Зарегистрироваться</a>
+    </div>
+    {% endif %}
+</div>
+
+{% if user.is_authenticated %}
+<div class="dashboard-grid">
+    <!-- Левая колонка с результатами -->
+    <div class="dashboard-main">
+        <h3 class="section-title">Последние результаты</h3>
+        {% if recent_results %}
+            <div class="results-list">
+                {% for result in recent_results %}
+                <a href="{% url 'tests:result' result.id %}" class="result-item">
+                    <div class="result-header">
+                        <h5 class="result-title">{{ result.test.title|default:'Тест удален' }}</h5>
+                        <span class="result-badge 
+                            {% if result.passed %}badge-success
+                            {% else %}badge-danger{% endif %}">
+                            {% if result.passed %}Пройден
+                            {% else %}Не пройден{% endif %}
+                        </span>
+                    </div>
+                    <div class="result-body">
+                        <p class="result-score">
+                            Результат:
+                            {% if result.percentage is not None %}
+                                {{ result.percentage|floatformat:1 }}%
+                            {% elif result.completed_at %}
+                                0%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </p>
+                        <small class="result-date">
+                            {% if result.completed_at %}
+                                Завершен: {{ result.completed_at|date:'d.m.Y H:i' }}
+                            {% elif result.started_at %}
+                                Начат: {{ result.started_at|date:'d.m.Y H:i' }}
+                            {% endif %}
+                        </small>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">
+                Вы еще не проходили тесты. <a href="{% url 'tests:tests' %}" class="text-link">Начните сейчас!</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Правая колонка с действиями -->
+    <div class="dashboard-sidebar">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Быстрые действия</h5>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'tests:tests' %}" class="button button-primary button-block">
+                    Все тесты
+                </a>
+                <a href="{% url 'accounts:profile' %}" class="button button-secondary button-block">
+                    Мой профиль
+                </a>
+                  
+                {% if user.is_moderator %}
+                <a href="{% url 'administration:moderator_panel' %}" class="button button-secondary button-block">
+                    Панель модератора
+                </a>
+                {% endif %}
+                
+                {% if user.is_admin %}
+                <a href="{% url 'administration:admin_panel' %}" class="button button-secondary button-block">
+                    Админ-панель
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Доступные тесты (только те, которые пользователь не начинал) -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Доступные тесты</h5>
+            </div>
+            <div class="card-body">
+                {% if has_available_tests %}
+                    {% for test in available_tests %}
+                    <div class="recommended-test">
+                        <h6 class="test-title" style="color: black;">{{ test.title }}</h6>
+                        <p class="test-description">{{ test.description|truncatechars:100 }}</p>
+                        <a href="{% url 'tests:detail' test.id %}" class="button button-small button-outline">
+                            Начать
+                        </a>
+                    </div>
+                    {% if not forloop.last %}<hr class="divider">{% endif %}
+                    {% endfor %}
+                    
+                    {% if total_available_tests > available_tests.count %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'tests:tests' %}" class="text-link">
+                            Посмотреть все доступные тесты ({{ total_available_tests }})
+                        </a>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state-small">
+                        <p class="text-muted">Нет доступных тестов</p>
+                        <p class="small text-muted">Вы прошли или начали все тесты</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if not user.is_authenticated %}
+<div class="features-grid">
+    <div class="feature-card">
+        <div class="feature-card-body">
+            <h5 class="feature-title">Профессиональные тесты</h5>
+            <p class="feature-text">Тесты составлены опытными специалистами и соответствуют профессиональным стандартам.</p>
+        </div>
+    </div>
+    
+    <div class="feature-card">
+        <div class="feature-card-body">
+            <h5 class="feature-title">Актуальные знания</h5>
+            <p class="feature-text">Регулярное обновление тестов в соответствии с изменениями в медицине.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

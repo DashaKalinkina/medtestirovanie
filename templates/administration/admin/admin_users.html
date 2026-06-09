@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Управление пользователями{% endblock %}
+
+{% block content %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Управление пользователями</h2>
+        <a href="{% url 'administration:admin_panel' %}" class="btn btn-outline-secondary">
+            ← Назад в админ-панель
+        </a>
+    </div>
+
+    <!-- ФОРМА ПОИСКА И ФИЛЬТРАЦИИ -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-5">
+                    <label for="search" class="form-label">Поиск</label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="search" 
+                           name="search" 
+                           value="{{ search_query }}"
+                           placeholder="Имя, фамилия, email или должность...">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="specialization" class="form-label">Специализация</label>
+                    <select class="form-select" id="specialization" name="specialization">
+                        <option value="">Все специализации</option>
+                        {% for spec in specializations %}
+                        <option value="{{ spec }}" {% if selected_specialization == spec %}selected{% endif %}>
+                            {{ spec }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="role" class="form-label">Роль</label>
+                    <select class="form-select" id="role" name="role">
+                        <option value="">Все роли</option>
+                        <option value="admin" {% if selected_role == 'admin' %}selected{% endif %}>Администраторы</option>
+                        <option value="moderator" {% if selected_role == 'moderator' %}selected{% endif %}>Модераторы</option>
+                        <option value="user" {% if selected_role == 'user' %}selected{% endif %}>Пользователи</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Найти
+                    </button>
+                </div>
+            </form>
+            
+            {% if search_query or selected_specialization or selected_role %}
+            <div class="mt-3">
+                <a href="{% url 'administration:admin_users' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-times"></i> Сбросить все фильтры
+                </a>
+                <span class="text-muted ms-2">
+                    Найдено: {{ users|length }} пользователей
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ТАБЛИЦА ПОЛЬЗОВАТЕЛЕЙ -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Пользователь</th>
+                            <th>Email</th>
+                            <th>Специализация</th>
+                            <th>Должность</th>
+                            <th>Роли</th>
+                            <th>Дата регистрации</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>
+                                <strong>{{ user.get_full_name|default:'Не указано' }}</strong>
+                                <br>
+                                <small class="text-muted">@{{ user.username }}</small>
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                {% if user.specialization %}
+                                <span class="badge bg-info">{{ user.specialization }}</span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.position %}
+                                {{ user.position }}
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.is_admin %}
+                                <span class="badge bg-danger">Админ</span>
+                                {% endif %}
+                                {% if user.is_moderator %}
+                                <span class="badge bg-warning text-dark">Модератор</span>
+                                {% endif %}
+                                {% if not user.is_admin and not user.is_moderator %}
+                                <span class="badge bg-secondary">Пользователь</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.created_at|date:'d.m.Y' }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <!-- Кнопка администратора -->
+                                    <form action="{% url 'administration:toggle_admin' user.id %}" method="POST" class="d-inline">
+                                        {% csrf_token %}
+                                        {% if user.is_admin %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                    title="Снять права администратора" 
+                                                    onclick="return confirm('Снять права администратора у пользователя {{ user.get_full_name }}?')">
+                                                 Снять админа
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-sm btn-outline-primary" 
+                                                    title="Сделать администратором"
+                                                    onclick="return confirm('Назначить пользователя {{ user.get_full_name }} администратором?')">
+                                                 Сделать админом
+                                            </button>
+                                        {% endif %}
+                                    </form>
+
+                                    <!-- Кнопка модератора (не показываем для админов, так как у них уже есть все права) -->
+                                    {% if not user.is_admin %}
+                                    <form action="{% url 'administration:toggle_moderator' user.id %}" method="POST" class="d-inline">
+                                        {% csrf_token %}
+                                        {% if user.is_moderator %}
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" 
+                                                    title="Снять права модератора"
+                                                    onclick="return confirm('Снять права модератора у пользователя {{ user.get_full_name }}?')">
+                                                Снять модератора
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-sm btn-outline-success" 
+                                                    title="Сделать модератором"
+                                                    onclick="return confirm('Назначить пользователя {{ user.get_full_name }} модератором?')">
+                                                 Сделать модератором
+                                            </button>
+                                        {% endif %}
+                                    </form>
+                                    {% endif %}
+
+                                    <!-- Кнопка удаления (нельзя удалить самого себя) -->
+                                    {% if user.id != request.user.id %}
+                                    <form action="{% url 'administration:delete_user' user.id %}" method="POST" class="d-inline"
+                                          onsubmit="return confirm('Удалить пользователя {{ user.get_full_name }}? Это действие нельзя отменить.')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить">
+                                             Удалить
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-users fa-4x mb-3"></i>
+                                    <h5>Пользователи не найдены</h5>
+                                    {% if search_query or selected_specialization or selected_role %}
+                                    <p>Попробуйте изменить параметры поиска</p>
+                                    <a href="{% url 'administration:admin_users' %}" class="btn btn-outline-secondary">
+                                        Сбросить фильтры
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

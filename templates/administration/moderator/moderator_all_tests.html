@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Все тесты{% endblock %}
+
+{% block content %}
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Все тесты в системе</h2>
+        <a href="{% url 'administration:moderator_panel' %}" class="btn btn-outline-secondary">
+            ← Мои тесты
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Поиск по названию</label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="search" 
+                           name="search" 
+                           value="{{ search_query|default:'' }}"
+                           placeholder="Введите название теста...">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="author" class="form-label">Автор</label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="author" 
+                           name="author" 
+                           value="{{ author_query|default:'' }}"
+                           placeholder="Имя автора...">
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="category" class="form-label">Категория</label>
+                    <select class="form-select" id="category" name="category">
+                        <option value="">Все категории</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="difficulty" class="form-label">Сложность</label>
+                    <select class="form-select" id="difficulty" name="difficulty">
+                        <option value="">Любая</option>
+                        <option value="easy" {% if selected_difficulty == 'easy' %}selected{% endif %}>Легкий</option>
+                        <option value="medium" {% if selected_difficulty == 'medium' %}selected{% endif %}>Средний</option>
+                        <option value="hard" {% if selected_difficulty == 'hard' %}selected{% endif %}>Сложный</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                         Найти
+                    </button>
+                </div>
+            </form>
+        
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <label for="access_type" class="form-label">Тип доступа</label>
+                    <select class="form-select" id="access_type" name="access_type">
+                        <option value="">Все типы</option>
+                        <option value="public" {% if selected_access == 'public' %}selected{% endif %}>Обычный</option>
+                        <option value="subscribed" {% if selected_access == 'subscribed' %}selected{% endif %}>По подписке</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label">Дата создания (с)</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from|default:'' }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label">Дата создания (по)</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to|default:'' }}">
+                </div>
+                
+            </div>
+            
+            {% if search_query or author_query or selected_category or selected_difficulty or selected_access or date_from or date_to %}
+            <div class="mt-3">
+                <span class="text-muted">
+                    Найдено: {{ all_tests|length }} тестов
+                </span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if all_tests %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Автор</th>
+                            <th>Категория</th>
+                            <th>Сложность</th>
+                            <th>Тип</th>
+                            <th>Подписчики</th>
+                            <th>Создан</th>
+                            <th>Вопросов</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for test in all_tests %}
+                        <tr>
+                            <td>
+                                <strong>{{ test.title }}</strong>
+                                {% if test.description %}
+                                <br>
+                                <small class="text-muted">{{ test.description|truncatechars:50 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if test.created_by %}
+                                {{ test.created_by.get_full_name }}
+                                <br>
+                                <small class="text-muted">@{{ test.created_by.username }}</small>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ test.category.name|default:'—' }}</td>
+                            <td>
+                               <span class="badge bg-{% if test.difficulty == 'easy' %}success{% elif test.difficulty == 'medium' %}warning{% else %}danger{% endif %}">
+                                 {% if test.difficulty == 'easy' %}Легкий
+                                 {% elif test.difficulty == 'medium' %}Средний
+                                 {% else %}Сложный{% endif %}
+                                </span>  
+                            </td>
+                            <td>
+                               {% if test.access_type == 'subscribed' %}
+                                <span class="badge bg-info">По подписке</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Обычный</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if test.access_type == 'subscribed' %}
+                                <a href="{% url 'administration:moderator_subscribers' test.id %}"
+                                   class="btn btn-sm btn-outline-secondary">
+                                    {{ test.subscriptions.count }} чел.
+                                </a>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ test.created_at|date:'d.m.Y'|default:'—' }}
+                                <br>
+                                <small class="text-muted">{{ test.created_at|timesince }}</small>
+                            </td>
+                            <td><span class="badge bg-info">{{ test.questions.count }}</span></td>
+                            <td>
+                                {% if test.created_by == current_user or current_user.is_admin %}
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'administration:moderator_questions' test.id %}"
+                                       class="btn btn-sm btn-outline-primary" title="Вопросы">
+                                        Вопросы
+                                    </a>
+                                    <a href="{% url 'administration:moderator_edit_test' test.id %}"
+                                       class="btn btn-sm btn-outline-secondary" title="Редактировать">
+                                        Редактировать
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                            data-bs-toggle="modal" data-bs-target="#deleteModalAll{{ test.id }}" title="Удалить">
+                                        Удалить
+                                    </button>
+                                </div>
+
+                                <!-- Модальное окно подтверждения удаления -->
+                                <div class="modal fade" id="deleteModalAll{{ test.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Удаление теста</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Удалить тест <strong>"{{ test.title }}"</strong>?</p>
+                                                <p class="text-muted small">
+                                                    Автор: {% if test.created_by %}{{ test.created_by.get_full_name }}{% else %}—{% endif %}
+                                                </p>
+                                                <div class="alert alert-warning">
+                                                     Все данные теста (вопросы, ответы, результаты) будут безвозвратно удалены.
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                <form action="{% url 'administration:moderator_delete_test' test.id %}" method="POST">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">Удалить</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle"></i> 
+                {% if search_query or author_query or selected_category or selected_difficulty or selected_access or date_from or date_to %}
+                    По вашему запросу ничего не найдено. 
+                    <a href="{% url 'administration:moderator_tests' %}" class="alert-link">Сбросить фильтры</a>
+                {% else %}
+                    В системе пока нет тестов.
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+{% endblock %}

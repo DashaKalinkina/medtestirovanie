@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Результаты теста{% endblock %}
+
+{% block content %}
+<div class="result-container">
+    <div class="result-card">
+        <div class="result-card-body">
+            <h2 class="result-main-title">Результаты теста</h2>
+            <h3 class="result-test-title">{{ result.test.title|default:'Тест удален' }}</h3>
+
+            <div class="result-alert 
+                {% if result.passed %}result-success
+                {% elif result.passed == False %}result-danger
+                {% else %}result-warning{% endif %}">
+                <h4 class="result-status">
+                    {% if result.passed %}
+                    ✓ Тест пройден!
+                    {% elif result.passed == False %}
+                    ✗ Тест не пройден
+                    {% else %}
+                    ⏳ Тест в процессе
+                    {% endif %}
+                </h4>
+                <div class="result-details">
+                    <p>
+                        <span class="result-label">Ваш результат:</span>
+                        <span class="result-value">
+                            {% if result.percentage is not None %}
+                            {{ result.percentage|floatformat:1 }}%
+                            {% else %}
+                            не завершен
+                            {% endif %}
+                        </span>
+                    </p>
+                    <p>
+                        <span class="result-label">Проходной балл:</span>
+                        <span class="result-value">{{ result.test.passing_score|default:'?' }}%</span>
+                    </p>
+                    <p>
+                        <span class="result-label">Набрано баллов:</span>
+                        <span class="result-value">{{ result.score|default:'0' }} из {{ result.test.questions.all|length|default:'0' }}</span>
+                    </p>
+                    {% if result.time_taken %}
+                    <p>
+                        <span class="result-label">Время выполнения:</span>
+                        <span class="result-value">{{ minutes }} мин {{ seconds }} сек</span>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if detailed_answers %}
+            <h4 class="details-title">Детализация ответов:</h4>
+            {% for detail in detailed_answers %}
+            <div class="question-card">
+                <div class="question-card-body">
+                    <h5 class="question-text">Вопрос {{ forloop.counter }}: {{ detail.question.text|default:'Вопрос удален' }}</h5>
+
+                    {% if detail.question and detail.question.image %}
+                    <div class="question-image">
+                        <img src="{{ detail.question.image.url }}"
+                             class="question-img"
+                             alt="Изображение к вопросу">
+                    </div>
+                    {% endif %}
+
+                    {% if detail.is_correct is not None %}
+                    <div class="answer-status {% if detail.is_correct %}status-correct{% else %}status-incorrect{% endif %}">
+                        {% if detail.is_correct %}✓ Правильно{% else %}✗ Неправильно{% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Проверяем тип вопроса -->
+                    {% if detail.question.question_type == 'text' %}
+                        <!-- Текстовый вопрос -->
+                        <div class="answer-section">
+                            <p><span class="answer-label">Ваш ответ:</span> 
+                               <span class="user-answer">{{ detail.text_answer|default:'Нет ответа' }}</span>
+                            </p>
+                            <p><span class="answer-label">Правильный ответ:</span> 
+                               <span class="correct-answer">
+                                   {% for answer in detail.correct_answers %}
+                                       {{ answer.text }}
+                                   {% empty %}
+                                       Не указан
+                                   {% endfor %}
+                               </span>
+                            </p>
+                        </div>
+                    {% else %}
+                        <!-- Вопросы с выбором ответа (single/multiple) -->
+                        <div class="answer-section">
+                            <p class="answer-label">Ваши ответы:</p>
+                            <ul class="answer-list user-answers">
+                                {% for answer in detail.user_answers %}
+                                <li>{{ answer.text }}</li>
+                                {% empty %}
+                                <li class="no-answer">Нет ответа</li>
+                                {% endfor %}
+                            </ul>
+
+                            <p class="answer-label">Правильные ответы:</p>
+                            <ul class="answer-list correct-answers">
+                                {% for answer in detail.correct_answers %}
+                                <li>{{ answer.text }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <div class="result-actions">
+                <a href="{% url 'tests:tests' %}" class="button button-primary">
+                    ← Вернуться к тестам
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

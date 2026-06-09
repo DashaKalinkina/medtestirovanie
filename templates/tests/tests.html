@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Доступные тесты{% endblock %}
+
+{% block content %}
+<div class="tests-container">
+    <h2 class="page-title">Доступные тесты</h2>
+
+    <!-- Фильтры по категориям и типу -->
+    <div class="filters-section">
+        <h5 class="filters-title">Категории:</h5>
+        <div class="filters-group">
+            <a href="{% url 'tests:tests' %}"
+               class="filter-btn {% if not request.GET.assigned_only %}filter-active{% else %}filter-outline{% endif %}">
+                Все
+            </a>
+            <a href="{% url 'tests:tests' %}?assigned_only=1"
+               class="filter-btn {% if request.GET.assigned_only %}filter-active{% else %}filter-outline{% endif %}">
+                Назначенные
+            </a>
+            {% for category in categories %}
+            <a href="{% url 'tests:tests' %}?category_id={{ category.id }}{% if request.GET.assigned_only %}&assigned_only=1{% endif %}"
+               class="filter-btn filter-outline-secondary">
+                {{ category.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Список тестов -->
+    <div class="tests-grid">
+        {% for item in tests %}
+        <div class="test-card">
+            <div class="test-card-header">
+                <h5 class="test-title">{{ item.test.title }}</h5>
+                {% if item.test.category %}
+                <span class="test-category-badge">{{ item.test.category.name }}</span>
+                {% endif %}
+            </div>
+            <div class="test-card-body">
+                <p class="test-description">{{ item.test.description|truncatechars:100|default:'' }}</p>
+
+                <div class="test-meta">
+                    <span class="meta-label">Сложность:</span>
+                    <span class="difficulty-badge 
+                        {% if item.test.difficulty == 'easy' %}difficulty-easy
+                        {% elif item.test.difficulty == 'medium' %}difficulty-medium
+                        {% else %}difficulty-hard{% endif %}">
+                        {% if item.test.difficulty == 'easy' %}Легкий
+                        {% elif item.test.difficulty == 'medium' %}Средний
+                        {% else %}Сложный{% endif %}
+                    </span>
+                </div>
+
+                <div class="test-meta">
+                    <span class="meta-label">Время:</span>
+                    <span class="meta-value">
+                        {% with seconds=item.test.time_limit|default:3600 %}
+                            {% widthratio seconds 60 1 as minutes %}
+                            {{ minutes }} мин
+                        {% endwith %}
+                    </span>
+                </div>
+
+                <div class="test-meta">
+                    <span class="meta-label">Тип:</span>
+                    {% if item.test.access_type == 'subscribed' %}
+                    <span class="test-type assigned">Назначенный тест</span>
+                    {% else %}
+                    <span class="test-type regular">Обычный тест</span>
+                    {% endif %}
+                </div>
+
+                <!-- Статус теста -->
+                <div class="test-status">
+                    {% if item.status == 'passed' %}
+                    <div class="status-success">
+                         Пройден
+                        {% if item.result and item.result.percentage is not None %}
+                        <br>
+                        <small>Результат: {{ item.result.percentage|floatformat:1 }}%</small>
+                        {% endif %}
+                    </div>
+                    {% elif item.status == 'failed' %}
+                    <div class="status-failed">
+                        Не пройден
+                        {% if item.result and item.result.percentage is not None %}
+                        <br>
+                        <small>Результат: {{ item.result.percentage|floatformat:1 }}%</small>
+                        {% else %}
+                        <br>
+                        <small>Тест начат, но не завершен</small>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="status-info">
+                        Не начат
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="test-card-footer">
+                <div class="test-actions">
+                    <!-- Кнопка "Начать тест" только для не начатых тестов -->
+                    {% if item.status == 'not_started' %}
+                    <a href="{% url 'tests:detail' item.test.id %}"
+                       class="button button-primary button-block">
+                        Начать тест
+                    </a>
+                    {% endif %}
+                    
+                    <!-- Пробный тест (только для не начатых тестов) -->
+                    {% if item.test.is_trial and item.status == 'not_started' %}
+                        {% if item.test.id in trial_exhausted_ids %}
+                        <button type="button" class="button button-disabled button-block" disabled title="Попытки закончились">
+                            Пробный тест — попытки закончились
+                        </button>
+                        {% else %}
+                        <a href="{% url 'tests:trial_page' item.test.id %}"
+                           class="button button-outline-primary button-block">
+                            Начать пробный тест
+                        </a>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <!-- Кнопка просмотра результата для пройденных и непройденных тестов -->
+                    {% if item.result %}
+                    <a href="{% url 'tests:result' item.result.id %}"
+                       class="button button-outline-secondary button-block">
+                        Посмотреть результат
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="alert alert-info">
+                На данный момент нет доступных тестов.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
